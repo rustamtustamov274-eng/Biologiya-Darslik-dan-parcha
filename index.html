@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muskullar Qanday Ishlaydi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#141824; --muted:#5d6474;
+  --accent:#e63946; --accent2:#1d7fb8; --border:#e2e6ee;
+  --shadow:0 6px 24px rgba(20,24,36,.08);
+}
+[data-theme="dark"]{
+  --bg:#0d1117; --card:#161b26; --text:#e7ecf3; --muted:#9aa3b2;
+  --accent:#ff6b7a; --accent2:#5bb8f5; --border:#232a38;
+  --shadow:0 6px 24px rgba(0,0,0,.5);
+}
+*{margin:0;padding:0;box-sizing:border-box;transition:background .25s,color .25s,border-color .25s}
+html,body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+/* ===== HEADER ===== */
+header{
+  position:sticky;top:0;z-index:500;background:var(--card);
+  box-shadow:var(--shadow);padding:12px 22px;
+  display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;cursor:pointer}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,.icon-btn{
+  background:var(--bg);color:var(--text);border:1px solid var(--border);
+  padding:8px 12px;border-radius:9px;font-size:14px;cursor:pointer;
+}
+.icon-btn{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px;padding:0}
+.icon-btn:hover,select:hover{border-color:var(--accent);transform:translateY(-1px)}
+/* ===== NAV TABS ===== */
+nav.tabs{display:flex;gap:8px;justify-content:center;padding:14px 15px 0;flex-wrap:wrap}
+.tab{
+  background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:10px 20px;border-radius:30px;font-size:14px;font-weight:600;cursor:pointer;
+}
+.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent}
+.tab:hover{transform:translateY(-2px)}
+/* ===== HERO ===== */
+.hero{text-align:center;padding:34px 20px 20px}
+.hero h1{font-size:clamp(26px,5vw,46px);margin-bottom:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero p{color:var(--muted);max-width:720px;margin:0 auto;font-size:15px;line-height:1.6}
+/* ===== GRID ===== */
+.grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:20px;padding:26px;max-width:1400px;margin:0 auto;
+}
+.card{
+  background:var(--card);border-radius:16px;overflow:hidden;
+  box-shadow:var(--shadow);border:1px solid var(--border);cursor:pointer;
+  transition:transform .25s,box-shadow .25s;
+}
+.card:hover{transform:translateY(-6px);box-shadow:0 14px 34px rgba(230,57,70,.22)}
+.card-preview{height:150px;display:flex;align-items:center;justify-content:center;font-size:58px;position:relative}
+.card-preview::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.35),transparent 60%)}
+.card-body{padding:16px}
+.card-body h3{font-size:17px;margin-bottom:6px}
+.card-body p{font-size:12.5px;color:var(--muted);line-height:1.5}
+/* ===== MODAL ===== */
+.modal{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);
+  z-index:1000;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(5px);
+}
+.modal.active{display:flex}
+.modal-content{
+  background:var(--card);border-radius:18px;max-width:900px;width:100%;
+  max-height:92vh;overflow-y:auto;animation:pop .3s ease;
+}
+@keyframes pop{from{transform:translateY(26px) scale(.98);opacity:0}to{transform:none;opacity:1}}
+.modal-header{
+  padding:18px 24px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;background:var(--card);z-index:10;border-radius:18px 18px 0 0;
+}
+.modal-header h2{font-size:20px}
+.close-btn{background:var(--accent);color:#fff;border:none;width:36px;height:36px;border-radius:50%;font-size:20px}
+.modal-body{padding:22px}
+.canvas-3d{width:100%;height:340px;background:var(--bg);border-radius:12px;margin-bottom:18px;border:1px solid var(--border);overflow:hidden;position:relative}
+.info-block{margin-top:16px}
+.info-block h4{color:var(--accent);font-size:12.5px;letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px}
+.info-block p{line-height:1.7;font-size:14px;color:var(--text);opacity:.9}
+.tag{display:inline-block;background:var(--accent2);color:#fff;padding:4px 12px;border-radius:20px;font-size:12px;margin:3px 4px 3px 0}
+/* ===== VIDEO BO'LIMI ===== */
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;padding:26px;max-width:1200px;margin:0 auto}
+.video-card{background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);cursor:pointer;transition:transform .25s}
+.video-card:hover{transform:translateY(-5px)}
+.video-thumb{height:170px;display:flex;align-items:center;justify-content:center;font-size:52px;position:relative;color:#fff}
+.video-thumb .play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64px;opacity:.85}
+.video-card .vb{padding:14px}
+.video-card h3{font-size:16px;margin-bottom:5px}
+.video-card p{font-size:12.5px;color:var(--muted)}
+video{width:100%;border-radius:12px;background:#000;margin-bottom:16px}
+/* ===== CREATORS ===== */
+.creators-wrap{max-width:1000px;margin:0 auto;padding:34px 22px 10px;text-align:center}
+.creators-wrap h2{font-size:26px;margin-bottom:8px;color:var(--accent)}
+.creators-wrap>p{color:var(--muted);margin-bottom:26px}
+.creator-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:20px}
+.creator-card{background:var(--card);border-radius:16px;padding:26px 18px;border:1px solid var(--border);box-shadow:var(--shadow);transition:transform .25s}
+.creator-card:hover{transform:translateY(-5px)}
+.avatar{width:78px;height:78px;border-radius:50%;margin:0 auto 14px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:34px;color:#fff;font-weight:800}
+.creator-card h3{font-size:16px;margin-bottom:4px}
+.creator-card p{font-size:12.5px;color:var(--muted)}
+/* ===== ABOUT ===== */
+.about-wrap{max-width:820px;margin:0 auto;padding:34px 22px}
+.about-wrap h2{font-size:26px;margin-bottom:14px;color:var(--accent);text-align:center}
+.about-wrap p{line-height:1.8;font-size:15px;color:var(--text);opacity:.9;margin-bottom:14px}
+.about-wrap ul{margin-left:22px;line-height:1.9;font-size:14.5px}
+/* ===== FOOTER ===== */
+footer{text-align:center;padding:28px 20px;margin-top:30px;border-top:1px solid var(--border);color:var(--muted);font-size:13.5px}
+footer strong{color:var(--accent)}
+.hidden{display:none!important}
+@media(max-width:600px){
+  header{padding:10px 12px}.logo{font-size:16px}
+  .grid{padding:14px;gap:14px}.canvas-3d{height:240px}
+  .modal-body{padding:14px}.hero{padding:22px 14px 12px}
+}
+</style>
+</head>
+<body data-theme="light">
+
+<!-- ============ HEADER ============ -->
+<header>
+  <div class="logo" onclick="showPage('home')">💪 Muskullar Qanday Ishlaydi</div>
+  <div class="controls">
+    <select id="langSelect" onchange="changeLang(this.value)">
+      <option value="uz">🇺🇿 O'zbek</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="tr">🇹🇷 Türkçe</option>
+      <option value="kk">🇰🇿 Қазақша</option>
+      <option value="ky">🇰🇬 Кыргызча</option>
+      <option value="tg">🇹🇯 Тоҷикӣ</option>
+      <option value="az">🇦🇿 Azərbaycan</option>
+      <option value="ar">🇸🇦 العربية</option>
+      <option value="fa">🇮🇷 فارسی</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="es">🇪🇸 Español</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="pt">🇵🇹 Português</option>
+      <option value="zh">🇨🇳 中文</option>
+      <option value="ja">🇯🇵 日本語</option>
+      <option value="ko">🇰🇷 한국어</option>
+      <option value="hi">🇮🇳 हिन्दी</option>
+      <option value="bn">🇧🇩 বাংলা</option>
+      <option value="ur">🇵🇰 اردو</option>
+      <option value="id">🇮🇩 Indonesia</option>
+      <option value="ms">🇲🇾 Melayu</option>
+      <option value="vi">🇻🇳 Tiếng Việt</option>
+      <option value="th">🇹🇭 ไทย</option>
+      <option value="nl">🇳🇱 Nederlands</option>
+      <option value="pl">🇵🇱 Polski</option>
+      <option value="uk">🇺🇦 Українська</option>
+      <option value="sv">🇸🇪 Svenska</option>
+      <option value="he">🇮🇱 עברית</option>
+      <option value="ro">🇷🇴 Română</option>
+      <option value="el">🇬🇷 Ελληνικά</option>
+    </select>
+    <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Rejim">🌙</button>
+  </div>
+</header>
+
+<!-- ============ TABS ============ -->
+<nav class="tabs">
+  <button class="tab active" data-page="home" onclick="showPage('home')">🏠 Bosh sahifa</button>
+  <button class="tab" data-page="videos" onclick="showPage('videos')">🎬 Videolar</button>
+  <button class="tab" data-page="creators" onclick="showPage('creators')">👨‍💻 Yaratuvchilar</button>
+  <button class="tab" data-page="about" onclick="showPage('about')">ℹ️ Sayt haqida</button>
+</nav>
+
+<!-- ============ HOME PAGE ============ -->
+<div id="page-home">
+  <section class="hero">
+    <h1 id="heroTitle">Muskullar Qanday Ishlaydi</h1>
+    <p id="heroDesc">3D interaktiv loyihalar orqali inson muskullari tizimini o'rganing — biologiya fanidan zamonaviy qo'llanma</p>
+  </section>
+  <div class="grid" id="grid"></div>
+</div>
+
+<!-- ============ VIDEOS PAGE ============ -->
+<div id="page-videos" class="hidden">
+  <section class="hero">
+    <h1 id="vidTitle">🎬 Video Darslar</h1>
+    <p id="vidDesc">Muskullar haqida qisqa va tushunarli video materiallar</p>
+  </section>
+  <div class="video-grid" id="videoGrid"></div>
+</div>
+
+<!-- ============ CREATORS PAGE ============ -->
+<div id="page-creators" class="hidden">
+  <div class="creators-wrap">
+    <h2 id="crTitle">👨‍💻 Yaratuvchilar</h2>
+    <p id="crDesc">Ushbu loyiha quyidagi iste'dodli o'quvchilar tomonidan yaratilgan</p>
+    <div class="creator-grid">
+      <div class="creator-card">
+        <div class="avatar">RB</div>
+        <h3>Rustamov Bo'rixon</h3>
+        <p>Loyiha rahbari · 3D dizayn</p>
+      </div>
+      <div class="creator-card">
+        <div class="avatar">QQ</div>
+        <h3>Oqilov Qosimbek</h3>
+        <p>Frontend dasturchi · Tillar</p>
+      </div>
+      <div class="creator-card">
+        <div class="avatar">RU</div>
+        <h3>Raximxojayev Ubaydulla</h3>
+        <p>Kontent menejer · Biologiya</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ABOUT PAGE ============ -->
+<div id="page-about" class="hidden">
+  <div class="about-wrap">
+    <h2 id="abTitle">ℹ️ Sayt Haqida</h2>
+    <p id="abP1">Ushbu sayt — biologiya fanidan "Muskullar qanday ishlaydi" mavzusiga bag'ishlangan interaktiv 3D qo'llanma.</p>
+    <ul id="abList">
+      <li>30 dan ortiq 3D interaktiv loyihalar</li>
+      <li>30+ tilda qo'llab-quvvatlanadi</li>
+      <li>Oq va qora rejim (dark mode)</li>
+      <li>Video darslar va qo'shimcha materiallar</li>
+      <li>To'liq mobil qurilmalarga moslashgan</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ============ MODAL ============ -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle"></h2>
+      <button class="close-btn" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="canvas-3d" id="canvas3d"></div>
+      <div class="info-block"><h4 id="lblType">Turi</h4><div id="modalTags"></div></div>
+      <div class="info-block"><h4 id="lblFunc">Funksiyasi</h4><p id="modalFunc"></p></div>
+      <div class="info-block"><h4 id="lblLoc">Joylashuvi</h4><p id="modalLoc"></p></div>
+      <div class="info-block"><h4 id="lblFact">Qiziqarli fakt</h4><p id="modalFact"></p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ VIDEO MODAL ============ -->
+<div class="modal" id="videoModal">
+  <div class="modal-content" style="max-width:760px">
+    <div class="modal-header">
+      <h2 id="vModalTitle"></h2>
+      <button class="close-btn" onclick="closeVideo()">×</button>
+    </div>
+    <div class="modal-body">
+      <video id="vPlayer" controls></video>
+      <p id="vModalDesc" style="color:var(--muted);font-size:14px;line-height:1.6"></p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div>© 2025 <strong>Muskullar Qanday Ishlaydi</strong> — Biologiya fanidan interaktiv loyiha</div>
+  <div style="margin-top:8px">Yaratuvchilar: <strong>Rustamov Bo'rixon</strong> · <strong>Oqilov Qosimbek</strong> · <strong>Raximxojayev Ubaydulla</strong></div>
+</footer>
+
+<script>
+/* ================================================================
+   TILLAR (i18n)
+   ================================================================ */
+const i18n = {
+  uz:{heroTitle:"Muskullar Qanday Ishlaydi",heroDesc:"3D interaktiv loyihalar orqali inson muskullari tizimini o'rganing — biologiya fanidan zamonaviy qo'llanma",type:"Turi",func:"Funksiyasi",loc:"Joylashuvi",fact:"Qiziqarli fakt"},
+  en:{heroTitle:"How Muscles Work",heroDesc:"Learn the human muscular system through interactive 3D projects — a modern biology guide",type:"Type",func:"Function",loc:"Location",fact:"Fun fact"},
+  ru:{heroTitle:"Как Работают Мышцы",heroDesc:"Изучите мышечную систему человека через интерактивные 3D проекты",type:"Тип",func:"Функция",loc:"Расположение",fact:"Интересный факт"},
+  tr:{heroTitle:"Kaslar Nasıl Çalışır",heroDesc:"İnsan kas sistemini etkileşimli 3D projelerle öğrenin",type:"Tür",func:"İşlev",loc:"Konum",fact:"İlginç bilgi"},
+  kk:{heroTitle:"Бұлшықеттер Қалай Жұмыс Істейді",heroDesc:"Адам бұлшықет жүйесін интерактивті 3D жобалар арқылы үйреніңіз",type:"Түрі",func:"Қызметі",loc:"Орналасуы",fact:"Қызықты факт"},
+  ky:{heroTitle:"Булчуңдар Кантип Иштейт",heroDesc:"Адамдын булчуң системасын интерактивдүү 3D долбоорлор аркылуу үйрөнүңүз",type:"Түрү",func:"Функциясы",loc:"Жайгашуусу",fact:"Кызыктуу факт"},
+  tg:{heroTitle:"Мускулҳо Чӣ Тавр Кор Мекунанд",heroDesc:"Системаи мускулии инсонро тавассути лоиҳаҳои 3D омӯзед",type:"Навъ",func:"Функсия",loc:"Ҷойгиршавӣ",fact:"Далели ҷолиб"},
+  az:{heroTitle:"Əzələlər Necə İşləyir",heroDesc:"İnsan əzələ sistemini interaktiv 3D layihələr vasitəsilə öyrənin",type:"Növ",func:"Funksiya",loc:"Yerləşmə",fact:"Maraqlı fakt"},
+  ar:{heroTitle:"كيف تعمل العضلات",heroDesc:"تعلم الجهاز العضلي البشري من خلال مشاريع ثلاثية الأبعاد تفاعلية",type:"النوع",func:"الوظيفة",loc:"الموقع",fact:"حقيقة ممتعة"},
+  fa:{heroTitle:"عضلات چگونه کار می‌کنند",heroDesc:"سیستم عضلانی انسان را از طریق پروژه‌های سه‌بعدی تعاملی بیاموزید",type:"نوع",func:"عملکرد",loc:"موقعیت",fact:"واقعیت جالب"},
+  de:{heroTitle:"Wie Muskeln Funktionieren",heroDesc:"Lernen Sie das menschliche Muskelsystem durch interaktive 3D-Projekte",type:"Typ",func:"Funktion",loc:"Lage",fact:"Interessanter Fakt"},
+  fr:{heroTitle:"Comment Fonctionnent les Muscles",heroDesc:"Apprenez le système musculaire humain grâce à des projets 3D interactifs",type:"Type",func:"Fonction",loc:"Emplacement",fact:"Fait amusant"},
+  es:{heroTitle:"Cómo Funcionan los Músculos",heroDesc:"Aprende el sistema muscular humano con proyectos 3D interactivos",type:"Tipo",func:"Función",loc:"Ubicación",fact:"Dato curioso"},
+  it:{heroTitle:"Come Funzionano i Muscoli",heroDesc:"Impara il sistema muscolare umano con progetti 3D interattivi",type:"Tipo",func:"Funzione",loc:"Posizione",fact:"Curiosità"},
+  pt:{heroTitle:"Como os Músculos Funcionam",heroDesc:"Aprenda o sistema muscular humano com projetos 3D interativos",type:"Tipo",func:"Função",loc:"Localização",fact:"Fato curioso"},
+  zh:{heroTitle:"肌肉如何工作",heroDesc:"通过交互式3D项目了解人体肌肉系统",type:"类型",func:"功能",loc:"位置",fact:"有趣事实"},
+  ja:{heroTitle:"筋肉はどのように働くか",heroDesc:"インタラクティブな3Dプロジェクトで人体の筋肉系を学びましょう",type:"種類",func:"機能",loc:"位置",fact:"豆知識"},
+  ko:{heroTitle:"근육은 어떻게 작동하나요",heroDesc:"인터랙티브 3D 프로젝트를 통해 인체 근육계를 배우세요",type:"유형",func:"기능",loc:"위치",fact:"재미있는 사실"},
+  hi:{heroTitle:"मांसपेशियाँ कैसे काम करती हैं",heroDesc:"इंटरैक्टिव 3D प्रोजेक्ट्स के माध्यम से मानव मांसपेशी प्रणाली सीखें",type:"प्रकार",func:"कार्य",loc:"स्थान",fact:"मजेदार तथ्य"},
+  bn:{heroTitle:"পেশী কীভাবে কাজ করে",heroDesc:"ইন্টারেক্টিভ 3D প্রকল্পের মাধ্যমে মানব পেশী সিস্টেম শিখুন",type:"ধরন",func:"কার্য",loc:"অবস্থান",fact:"মজার তথ্য"},
+  ur:{heroTitle:"پٹھے کیسے کام کرتے ہیں",heroDesc:"انٹرایکٹو 3D منصوبوں کے ذریعے انسانی پٹھوں کا نظام سیکھیں",type:"قسم",func:"فنکشن",loc:"مقام",fact:"دلچسپ حقیقت"},
+  id:{heroTitle:"Bagaimana Otot Bekerja",heroDesc:"Pelajari sistem otot manusia melalui proyek 3D interaktif",type:"Jenis",func:"Fungsi",loc:"Lokasi",fact:"Fakta menarik"},
+  ms:{heroTitle:"Bagaimana Otot Berfungsi",heroDesc:"Pelajari sistem otot manusia melalui projek 3D interaktif",type:"Jenis",func:"Fungsi",loc:"Lokasi",fact:"Fakta menarik"},
+  vi:{heroTitle:"Cơ Bắp Hoạt Động Như Thế Nào",heroDesc:"Tìm hiểu hệ cơ của con người qua các dự án 3D tương tác",type:"Loại",func:"Chức năng",loc:"Vị trí",fact:"Sự thật thú vị"},
+  th:{heroTitle:"กล้ามเนื้อทำงานอย่างไร",heroDesc:"เรียนรู้ระบบกล้ามเนื้อของมนุษย์ผ่านโปรเจกต์ 3D แบบอินเทอร์แอคทีฟ",type:"ประเภท",func:"ฟังก์ชัน",loc:"ตำแหน่ง",fact:"ข้อเท็จจริงที่น่าสนใจ"},
+  nl:{heroTitle:"Hoe Spieren Werken",heroDesc:"Leer het menselijke spierstelsel via interactieve 3D-projecten",type:"Type",func:"Functie",loc:"Locatie",fact:"Leuk weetje"},
+  pl:{heroTitle:"Jak Działają Mięśnie",heroDesc:"Poznaj układ mięśniowy człowieka dzięki interaktywnym projektom 3D",type:"Typ",func:"Funkcja",loc:"Lokalizacja",fact:"Ciekawostka"},
+  uk:{heroTitle:"Як Працюють М'язи",heroDesc:"Вивчайте м'язову систему людини через інтерактивні 3D проєкти",type:"Тип",func:"Функція",loc:"Розташування",fact:"Цікавий факт"},
+  sv:{heroTitle:"Hur Muskler Fungerar",heroDesc:"Lär dig människans muskelsystem genom interaktiva 3D-projekt",type:"Typ",func:"Funktion",loc:"Plats",fact:"Rolig fakta"},
+  he:{heroTitle:"איך שרירים עובדים",heroDesc:"למד את מערכת השרירים האנושית באמצעות פרויקטי תלת-ממד אינטראקטיביים",type:"סוג",func:"תפקוד",loc:"מיקום",fact:"עובדה מעניינת"},
+  ro:{heroTitle:"Cum Funcționează Mușchii",heroDesc:"Învață sistemul muscular uman prin proiecte 3D interactive",type:"Tip",func:"Funcție",loc:"Locație",fact:"Fapt interesant"},
+  el:{heroTitle:"Πώς Λειτουργούν οι Μύες",heroDesc:"Μάθετε το μυϊκό σύστημα του ανθρώπου μέσω διαδραστικών έργων 3D",type:"Τύπος",func:"Λειτουργία",loc:"Τοποθεσία",fact:"Διασκεδαστικό γεγονός"}
+};
+let currentLang = 'uz';
+
+/* ================================================================
+   3D LOYIHALAR (30 ta)
+   ================================================================ */
+const projects = [
+  {id:'biceps',icon:'💪',c:['#e63946','#457b9d'],shape:'sphere',
+   uz:{name:"Biceps (Ikki boshli muskul)",type:"Skelet mushagi",func:"Tirsakni bukadi va bilakni aylantiradi. Qo'lni ko'tarishda asosiy rol o'ynaydi.",loc:"Yelka va tirsak o'rtasida, old tomonda.",fact:"Biceps lotincha 'ikki bosh' degan ma'noni anglatadi."},
+   en:{name:"Biceps",type:"Skeletal muscle",func:"Flexes the elbow and rotates the forearm.",loc:"Front of upper arm.",fact:"Means 'two heads' in Latin."}},
+  {id:'triceps',icon:'🦾',c:['#2a9d8f','#264653'],shape:'sphere',
+   uz:{name:"Triceps (Uch boshli muskul)",type:"Skelet mushagi",func:"Tirsakni yozadi (to'g'rilaydi).",loc:"Yelkaning orqa tomonida.",fact:"Tanadagi eng katta qo'l mushagi."},
+   en:{name:"Triceps",type:"Skeletal muscle",func:"Extends the elbow.",loc:"Back of upper arm.",fact:"Largest muscle in the arm."}},
+  {id:'heart',icon:'❤️',c:['#e63946','#f1faee'],shape:'box',
+   uz:{name:"Yurak muskuli (Miokard)",type:"Yurak mushagi",func:"Qonni butun tanaga haydaydi. Kuniga 100,000 marta qisqaradi.",loc:"Ko'krak qafasining markazida.",fact:"Yurak umr bo'yi ~2.5 milliard marta uradi."},
+   en:{name:"Heart Muscle",type:"Cardiac muscle",func:"Pumps blood throughout the body.",loc:"Center of chest.",fact:"Beats ~2.5 billion times in a lifetime."}},
+  {id:'abs',icon:'🫃',c:['#f4a261','#e76f51'],shape:'box',
+   uz:{name:"Qorin muskullari (Press)",type:"Skelet mushagi",func:"Tanani bukadi, umurtqani qo'llab-quvvatlaydi.",loc:"Qorin old qismi.",fact:"6 ta alohida bo'lakdan iborat."},
+   en:{name:"Abdominal muscles",type:"Skeletal muscle",func:"Flexes the torso and supports the spine.",loc:"Front of abdomen.",fact:"Made of 6 segments."}},
+  {id:'quad',icon:'🦵',c:['#264653','#2a9d8f'],shape:'cylinder',
+   uz:{name:"To'rt boshli muskul (Kvadriceps)",type:"Skelet mushagi",func:"Tizzani yozadi, yurishda muhim.",loc:"Sonning old qismi.",fact:"Tanadagi eng kuchli mushaklardan biri."},
+   en:{name:"Quadriceps",type:"Skeletal muscle",func:"Extends the knee.",loc:"Front of thigh.",fact:"One of the strongest muscles."}},
+  {id:'hamstring',icon:'🦿',c:['#457b9d','#1d3557'],shape:'cylinder',
+   uz:{name:"Son orqa muskuli",type:"Skelet mushagi",func:"Tizzani bukadi, sonni orqaga tortadi.",loc:"Sonning orqa qismi.",fact:"Yugurishda eng ko'p shikastlanadigan mushak."},
+   en:{name:"Hamstring",type:"Skeletal muscle",func:"Flexes the knee.",loc:"Back of thigh.",fact:"Most commonly injured in running."}},
+  {id:'calf',icon:'🦶',c:['#8ecae6','#219ebc'],shape:'cylinder',
+   uz:{name:"Boldir muskuli (Ikra)",type:"Skelet mushagi",func:"Oyoq panjasini bukadi, sakrashda ishlatiladi.",loc:"Boldirning orqa qismi.",fact:"Har qadamda tananing 3 barobar og'irligini ko'taradi."},
+   en:{name:"Calf muscle",type:"Skeletal muscle",func:"Flexes the foot.",loc:"Back of lower leg.",fact:"Lifts 3x body weight each step."}},
+  {id:'deltoid',icon:'🏋️',c:['#e76f51','#f4a261'],shape:'sphere',
+   uz:{name:"Delta mushak",type:"Skelet mushagi",func:"Qo'lni ko'taradi va aylantiradi.",loc:"Yelka ustida.",fact:"Uchta qismdan iborat — old, o'rta, orqa."},
+   en:{name:"Deltoid",type:"Skeletal muscle",func:"Raises and rotates the arm.",loc:"On the shoulder.",fact:"Has 3 parts."}},
+  {id:'pecs',icon:'🫁',c:['#e63946','#f77f00'],shape:'box',
+   uz:{name:"Ko'krak muskullari",type:"Skelet mushagi",func:"Qo'lni tanaga yaqinlashtiradi.",loc:"Ko'krak old qismi.",fact:"Nafas olishda ham yordam beradi."},
+   en:{name:"Pectorals",type:"Skeletal muscle",func:"Brings arm toward body.",loc:"Front of chest.",fact:"Helps in breathing."}},
+  {id:'lats',icon:'🦅',c:['#023047','#219ebc'],shape:'box',
+   uz:{name:"Keng orqa muskuli",type:"Skelet mushagi",func:"Qo'lni pastga va orqaga tortadi.",loc:"Orqaning yon tomonlari.",fact:"Tanadagi eng keng mushak."},
+   en:{name:"Latissimus dorsi",type:"Skeletal muscle",func:"Pulls arm down and back.",loc:"Sides of back.",fact:"Widest muscle in body."}},
+  {id:'trap',icon:'🔺',c:['#6a4c93','#8ac926'],shape:'box',
+   uz:{name:"Trapezius mushak",type:"Skelet mushagi",func:"Yelkani ko'taradi va harakatlantiradi.",loc:"Bo'yin va orqaning yuqori qismi.",fact:"Uchburchak shaklda."},
+   en:{name:"Trapezius",type:"Skeletal muscle",func:"Moves the shoulder.",loc:"Neck and upper back.",fact:"Triangle-shaped."}},
+  {id:'glute',icon:'🍑',c:['#f77f00','#fcbf49'],shape:'sphere',
+   uz:{name:"Dumba muskuli (Gluteus)",type:"Skelet mushagi",func:"Sonni orqaga tortadi, tik turishni ta'minlaydi.",loc:"Chanoq orqa qismi.",fact:"Tanadagi eng katta mushak."},
+   en:{name:"Gluteus",type:"Skeletal muscle",func:"Extends the hip.",loc:"Rear of pelvis.",fact:"Largest muscle in body."}},
+  {id:'oblique',icon:'🌀',c:['#7209b7','#f72585'],shape:'box',
+   uz:{name:"Qiyshiq qorin muskullari",type:"Skelet mushagi",func:"Tanani yon tomonga bukadi.",loc:"Qorinning yon tomonlari.",fact:"Burilish harakatlarida ishtirok etadi."},
+   en:{name:"Obliques",type:"Skeletal muscle",func:"Rotates and bends the torso.",loc:"Sides of abdomen.",fact:"Helps in twisting movements."}},
+  {id:'forearm',icon:'✊',c:['#4361ee','#4cc9f0'],shape:'cylinder',
+   uz:{name:"Bilak muskullari",type:"Skelet mushagi",func:"Barmoqlarni bukadi va yozadi.",loc:"Bilak qismi.",fact:"20 dan ortiq mayda mushaklardan iborat."},
+   en:{name:"Forearm muscles",type:"Skeletal muscle",func:"Flex and extend fingers.",loc:"Forearm.",fact:"Contains 20+ small muscles."}},
+  {id:'masseter',icon:'😬',c:['#ffb703','#fb8500'],shape:'box',
+   uz:{name:"Chaynash muskuli",type:"Skelet mushagi",func:"Jagni qisadi — chaynashda ishlatiladi.",loc:"Yonoq va jag' orasida.",fact:"Tanadagi eng kuchli mushaklardan biri (tish bosimiga ko'ra)."},
+   en:{name:"Masseter",type:"Skeletal muscle",func:"Closes the jaw.",loc:"Between cheek and jaw.",fact:"One of the strongest muscles."}},
+  {id:'tongue',icon:'👅',c:['#ef476f','#ffd166'],shape:'sphere',
+   uz:{name:"Til muskuli",type:"Skelet mushagi",func:"Ovqatni aralashtiradi, gapiradi.",loc:"Og'iz bo'shlig'ida.",fact:"Tanadagi eng moslashuvchan mushak."},
+   en:{name:"Tongue",type:"Skeletal muscle",func:"Mixes food and helps speech.",loc:"Inside the mouth.",fact:"Most flexible muscle."}},
+  {id:'diaphragm',icon:'🌬️',c:['#06d6a0','#118ab2'],shape:'box',
+   uz:{name:"Diafragma",type:"Skelet mushagi",func:"Nafas olishda ishtirok etadi.",loc:"Ko'krak va qorin orasida.",fact:"Kuniga ~20,000 marta qisqaradi."},
+   en:{name:"Diaphragm",type:"Skeletal muscle",func:"Helps in breathing.",loc:"Between chest and abdomen.",fact:"Contracts ~20,000 times daily."}},
+  {id:'eye',icon:'👁️',c:['#118ab2','#06d6a0'],shape:'sphere',
+   uz:{name:"Ko'z muskullari",type:"Skelet mushagi",func:"Ko'zni harakatlantiradi.",loc:"Ko'z atrofida.",fact:"Har bir ko'zda 6 ta mushak bor."},
+   en:{name:"Eye muscles",type:"Skeletal muscle",func:"Move the eye.",loc:"Around the eye.",fact:"Each eye has 6 muscles."}},
+  {id:'smooth',icon:'🧬',c:['#8338ec','#3a86ff'],shape:'torus',
+   uz:{name:"Silliq mushaklar",type:"Silliq mushak",func:"Ichki organlarni harakatlantiradi.",loc:"Oshqozon, ichak, qon tomirlari.",fact:"Irodasiz ishlaydi."},
+   en:{name:"Smooth muscles",type:"Smooth muscle",func:"Move internal organs.",loc:"Stomach, intestines, vessels.",fact:"Works involuntarily."}},
+  {id:'cardiac2',icon:'🫀',c:['#d62828','#f77f00'],shape:'torus',
+   uz:{name:"Yurak klapanlari",type:"Yurak mushagi",func:"Qon oqimini bir yo'nalishda ushlab turadi.",loc:"Yurak ichida.",fact:"Kuniga ~100,000 marta ochiladi-yopiladi."},
+   en:{name:"Heart valves",type:"Cardiac muscle",func:"Regulate blood flow.",loc:"Inside the heart.",fact:"Open/close ~100,000 times daily."}},
+  {id:'neck',icon:'🦴',c:['#6a4c93','#1982c4'],shape:'cylinder',
+   uz:{name:"Bo'yin muskullari",type:"Skelet mushagi",func:"Boshni harakatlantiradi va ushlab turadi.",loc:"Bo'yin qismi.",fact:"Boshning og'irligini ko'taradi."},
+   en:{name:"Neck muscles",type:"Skeletal muscle",func:"Move and support the head.",loc:"Neck area.",fact:"Support the weight of the head."}},
+  {id:'hand',icon:'🖐️',c:['#ff595e','#ffca3a'],shape:'box',
+   uz:{name:"Qo'l muskullari",type:"Skelet mushagi",func:"Barmoqlarni harakatlantiradi.",loc:"Kaft va barmoqlarda.",fact:"34 ta mayda mushak bor."},
+   en:{name:"Hand muscles",type:"Skeletal muscle",func:"Move the fingers.",loc:"Palm and fingers.",fact:"Contains 34 small muscles."}},
+  {id:'foot',icon:'🦶',c:['#8ac926','#1982c4'],shape:'box',
+   uz:{name:"Oyoq muskullari",type:"Skelet mushagi",func:"Yurish va yugurishda ishlatiladi.",loc:"Oyoq panjasida.",fact:"20 dan ortiq mushak bor."},
+   en:{name:"Foot muscles",type:"Skeletal muscle",func:"Used in walking and running.",loc:"In the foot.",fact:"Contains 20+ muscles."}},
+  {id:'spine',icon:'🧍',c:['#3a86ff','#8338ec'],shape:'cylinder',
+   uz:{name:"Umurtqa muskullari",type:"Skelet mushagi",func:"Tanani tik tutadi.",loc:"Umurtqa bo'ylab.",fact:"Eng chuqur joylashgan mushaklar."},
+   en:{name:"Spinal muscles",type:"Skeletal muscle",func:"Keep the body upright.",loc:"Along the spine.",fact:"Deepest muscles in the body."}},
+  {id:'jaw',icon:'🦷',c:['#fb8500','#ffb703'],shape:'box',
+   uz:{name:"Jag' muskullari",type:"Skelet mushagi",func:"Ovqatni chaynaydi.",loc:"Jag' atrofida.",fact:"Kuchli bosim hosil qiladi."},
+   en:{name:"Jaw muscles",type:"Skeletal muscle",func:"Chew food.",loc:"Around the jaw.",fact:"Generate strong pressure."}},
+  {id:'throat',icon:'🗣️',c:['#ef476f','#06d6a0'],shape:'cylinder',
+   uz:{name:"Tomoq muskullari",type:"Skelet mushagi",func:"Yutishga yordam beradi.",loc:"Tomoq qismi.",fact:"Ovqat va havoni boshqaradi."},
+   en:{name:"Throat muscles",type:"Skeletal muscle",func:"Help in swallowing.",loc:"Throat area.",fact:"Controls food and air."}},
+  {id:'pelvic',icon:'🩻',c:['#7209b7','#f72585'],shape:'torus',
+   uz:{name:"Chanoq tubi muskullari",type:"Skelet mushagi",func:"Ichki organlarni qo'llab-quvvatlaydi.",loc:"Chanoq pastki qismi.",fact:"Tananing 'poydevori'."},
+   en:{name:"Pelvic floor",type:"Skeletal muscle",func:"Supports internal organs.",loc:"Lower pelvis.",fact:"Foundation of the body."}},
+  {id:'arm-rotator',icon:'🔄',c:['#06d6a0','#118ab2'],shape:'torus',
+   uz:{name:"Yelka rotatorlari",type:"Skelet mushagi",func:"Yelkani aylantiradi.",loc:"Yelka bo'g'imi atrofida.",fact:"4 ta mushakdan iborat guruh."},
+   en:{name:"Rotator cuff",type:"Skeletal muscle",func:"Rotates the shoulder.",loc:"Around shoulder joint.",fact:"Group of 4 muscles."}},
+  {id:'ear',icon:'👂',c:['#ffca3a','#8ac926'],shape:'sphere',
+   uz:{name:"Quloq muskullari",type:"Skelet mushagi",func:"Tovushni uzatishga yordam beradi.",loc:"O'rta quloqda.",fact:"Eng kichik mushaklardan biri."},
+   en:{name:"Ear muscles",type:"Skeletal muscle",func:"Help transmit sound.",loc:"Middle ear.",fact:"Among the smallest muscles."}},
+  {id:'toe',icon:'👣',c:['#1982c4','#6a4c93'],shape:'box',
+   uz:{name:"Barmoq muskullari",type:"Skelet mushagi",func:"Balansni ta'minlaydi.",loc:"Oyoq barmoqlarida.",fact:"Harakatda muvozanat uchun muhim."},
+   en:{name:"Toe muscles",type:"Skeletal muscle",func:"Maintain balance.",loc:"In the toes.",fact:"Important for balance."}}
+];
+
+/* ================================================================
+   VIDEOLAR
+   ================================================================ */
+const videos = [
+  {t:"Muskullar tuzilishi",d:"Mushak to'qimalarining tuzilishi haqida qisqa dars.",c:['#e63946','#457b9d'],icon:'🎬',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'},
+  {t:"Biceps ishi",d:"Biceps mushagi qanday ishlaydi.",c:['#2a9d8f','#264653'],icon:'💪',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'},
+  {t:"Yurak faoliyati",d:"Yurak mushagi — miokard ishi.",c:['#e63946','#f1faee'],icon:'❤️',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'},
+  {t:"Silliq mushaklar",d:"Ichki organlar mushaklari.",c:['#8338ec','#3a86ff'],icon:'🧬',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4'}
+];
+
+/* ================================================================
+   RENDER GRID
+   ================================================================ */
+function renderGrid(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  projects.forEach(p => {
+    const tr = p[currentLang] || p.uz;
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => openModal(p);
+    card.innerHTML = `
+      <div class="card-preview" style="background:linear-gradient(135deg,${p.c[0]},${p.c[1]})">${p.icon}</div>
+      <div class="card-body">
+        <h3>${tr.name}</h3>
+        <p>${tr.func.substring(0,85)}${tr.func.length>85?'...':''}</p>
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+/* ================================================================
+   RENDER VIDEOS
+   ================================================================ */
+function renderVideos(){
+  const g = document.getElementById('videoGrid');
+  g.innerHTML = '';
+  videos.forEach(v => {
+    const c = document.createElement('div');
+    c.className = 'video-card';
+    c.onclick = () => openVideo(v);
+    c.innerHTML = `
+      <div class="video-thumb" style="background:linear-gradient(135deg,${v.c[0]},${v.c[1]})">
+        ${v.icon}<span class="play">▶️</span>
+      </div>
+      <div class="vb"><h3>${v.t}</h3><p>${v.d}</p></div>`;
+    g.appendChild(c);
+  });
+}
+
+/* ================================================================
+   MODAL — 3D
+   ================================================================ */
+let scene, camera, renderer, animId, currentMesh;
+
+function openModal(p){
+  const tr = p[currentLang] || p.uz;
+  document.getElementById('modalTitle').textContent = p.icon + ' ' + tr.name;
+  document.getElementById('modalTags').innerHTML = `<span class="tag">${tr.type}</span>`;
+  document.getElementById('modalFunc').textContent = tr.func;
+  document.getElementById('modalLoc').textContent = tr.loc;
+  document.getElementById('modalFact').textContent = tr.fact;
+  const i = i18n[currentLang] || i18n.uz;
+  document.getElementById('lblType').textContent = i.type;
+  document.getElementById('lblFunc').textContent = i.func;
+  document.getElementById('lblLoc').textContent = i.loc;
+  document.getElementById('lblFact').textContent = i.fact;
+
+  document.getElementById('modal').classList.add('active');
+  setTimeout(() => init3D(p), 60);
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('active');
+  stop3D();
+}
+
+function init3D(p){
+  const container = document.getElementById('canvas3d');
+  container.innerHTML = '';
+
+  const w = container.clientWidth || 600;
+  const h = container.clientHeight || 340;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(document.body.dataset.theme === 'dark' ? 0x0d1117 : 0xf4f6fb);
+
+  camera = new THREE.PerspectiveCamera(50, w/h, 0.1, 1000);
+  camera.position.set(0, 0, 5);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  container.appendChild(renderer.domElement);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const light1 = new THREE.PointLight(0xffffff, 1.2);
+  light1.position.set(5, 5, 5);
+  scene.add(light1);
+  const light2 = new THREE.PointLight(0x457b9d, 0.8);
+  light2.position.set(-5, -3, 4);
+  scene.add(light2);
+
+  // Geometry
+  let geo;
+  switch(p.shape){
+    case 'box': geo = new THREE.BoxGeometry(1.6,1.6,1.6,3,3,3); break;
+    case 'cylinder': geo = new THREE.CylinderGeometry(0.9,0.9,2,32); break;
+    case 'torus': geo = new THREE.TorusGeometry(1.2,0.4,20,60); break;
+    case 'cone': geo = new THREE.ConeGeometry(1.2,2,32); break;
+    default: geo = new THREE.SphereGeometry(1.3, 48, 48);
+  }
+
+  const mat = new THREE.MeshPhongMaterial({
+    color: p.c[0], shininess: 90, specular: 0xffffff,
+    emissive: new THREE.Color(p.c[1]).multiplyScalar(0.15)
+  });
+
+  currentMesh = new THREE.Mesh(geo, mat);
+  scene.add(currentMesh);
+
+  // Wireframe overlay
+  const wire = new THREE.LineSegments(
+    new THREE.WireframeGeometry(geo),
+    new THREE.LineBasicMaterial({ color: p.c[1], transparent:true, opacity:0.35 })
+  );
+  currentMesh.add(wire);
+
+  animate3D();
+}
+
+function animate3D(){
+  animId = requestAnimationFrame(animate3D);
+  if(currentMesh){
+    currentMesh.rotation.x += 0.006;
+    currentMesh.rotation.y += 0.01;
+  }
+  renderer.render(scene, camera);
+}
+
+function stop3D(){
+  if(animId) cancelAnimationFrame(animId);
+  if(renderer){
+    const c = renderer.domElement;
+    if(c.parentNode) c.parentNode.removeChild(c);
+    renderer.dispose();
+  }
+  scene = camera = renderer = currentMesh = null;
+  animId = null;
+}
+
+/* ================================================================
+   VIDEO MODAL
+   ================================================================ */
+function openVideo(v){
+  document.getElementById('vModalTitle').textContent = v.icon + ' ' + v.t;
+  document.getElementById('vModalDesc').textContent = v.d;
+  const player = document.getElementById('vPlayer');
+  player.src = v.url;
+  player.load();
+  document.getElementById('videoModal').classList.add('active');
+}
+function closeVideo(){
+  document.getElementById('videoModal').classList.remove('active');
+  const p = document.getElementById('vPlayer');
+  p.pause(); p.src = '';
+}
+
+/* ================================================================
+   TILNI O'ZGARTIRISH
+   ================================================================ */
+function changeLang(l){
+  currentLang = l;
+  const i = i18n[l] || i18n.uz;
+  document.getElementById('heroTitle').textContent = i.heroTitle;
+  document.getElementById('heroDesc').textContent = i.heroDesc;
+  renderGrid();
+  const grid = document.getElementById('grid');
+  if(grid.children.length) renderGrid();
+}
+
+/* ================================================================
+   THEME (oq / qora)
+   ================================================================ */
+function toggleTheme(){
+  const cur = document.body.dataset.theme;
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = next;
+  document.getElementById('themeBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+  // 3D scene rangini yangilash
+  if(scene) scene.background = new THREE.Color(next === 'dark' ? 0x0d1117 : 0xf4f6fb);
+  localStorage.setItem('theme', next);
+}
+
+/* ================================================================
+   NAV TABS
+   ================================================================ */
+function showPage(name){
+  ['home','videos','creators','about'].forEach(p => {
+    document.getElementById('page-'+p).classList.toggle('hidden', p !== name);
+  });
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.page === name);
+  });
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ================================================================
+   BOSHLASH
+   ================================================================ */
+(function init(){
+  const saved = localStorage.getItem('theme');
+  if(saved){
+    document.body.dataset.theme = saved;
+    document.getElementById('themeBtn').textContent = saved === 'dark' ? '☀️' : '🌙';
+  }
+  renderGrid();
+  renderVideos();
+})();
+
+// Modal yopish — fon bosilganda
+document.getElementById('modal').addEventListener('click', e => {
+  if(e.target.id === 'modal') closeModal();
+});
+document.getElementById('videoModal').addEventListener('click', e => {
+  if(e.target.id === 'videoModal') closeVideo();
+});
+window.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    if(document.getElementById('modal').classList.contains('active')) closeModal();
+    if(document.getElementById('videoModal').classList.contains('active')) closeVideo();
+  }
+});
+window.addEventListener('resize', () => {
+  if(camera && renderer){
+    const c = document.getElementById('canvas3d');
+    const w = c.clientWidth, h = c.clientHeight;
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+});
+</script>
+</body>
+</html>
